@@ -3,6 +3,7 @@ import asyncio
 import logging
 from datetime import timedelta
 import json
+import re
 
 import async_timeout
 from homeassistant.config_entries import ConfigEntry
@@ -278,76 +279,97 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register custom services
     async def handle_set_custom_mode_schedule(call):
-        """Handle the service call to set Time of Use (mode 8) schedule (one write)."""
-        # Prefer explicit station_id, otherwise parse from entity_id as in the existing code
+        """Handle the service call to set Time of Use (mode 8) schedule in one write.
+
+        Supports 1 or 2 periods. Period 2 is applied only if any period-2 field is provided.
+        """
+
+        def _norm_hhmm(value: str) -> str:
+            """Normalize incoming time strings to 'HH:MM'."""
+            if value is None:
+                return None
+            value = str(value).strip()
+            # If format is 'YYYY-MM-DD HH:MM:SS' or similar, keep last HH:MM
+            m = re.search(r"(\d{2}:\d{2})", value)
+            return m.group(1) if m else value[:5]
+
+        # Prefer explicit station_id; otherwise try to infer from entity_id
         station_id = call.data.get("station_id")
-        if not station_id:
-            entity_id = call.data.get("entity_id")
-            if not entity_id:
-                _LOGGER.error("Missing station_id or entity_id in service call data")
-                return
-            # Expected pattern: <domain>.<something>_<SID>_...
-            try:
-                station_id = entity_id.split("_")[1]
-            except Exception:
-                _LOGGER.error("Unable to parse station_id from entity_id: %s", entity_id)
-                return
-    
-        def _norm_time(value: str) -> str:
-            # Accept 'HH:MM' and normalize to 'HH:MM'
-            v = str(value).replace(":", "")
-            return f"{v[:2]}:{v[2:]}"
-    
-        cs_time = _norm_time(call.data.get("charge_start_time"))
-        ce_time = _norm_time(call.data.get("charge_end_time"))
-        dcs_time = _norm_time(call.data.get("discharge_start_time"))
-        dce_time = _norm_time(call.data.get("discharge_end_time"))
-    
-        c_power = int(call.data.get("charge_power"))
-        dc_power = int(call.data.get("discharge_power"))
-        charge_soc = int(call.data.get("charge_soc"))
-        dis_charge_soc = int(call.data.get("discharge_soc"))
+        if station_id is None:
+            entity_id = call.data.get("entity_id", "")
+            m = re.search(r"(\d+)", entity_id)
+            station_id = m.group(1) if m else None
+
+        if station_id is None:
+            raise ValueError("station_id is required (could not infer from entity_id)")
+
         reserve_soc = int(call.data.get("reserve_soc", 10))
-    
-        success = await api.set_time_of_use_one_period(
+
+        # Period 1 (required)
+        period_1 = {
+            "cs_time": _norm_hhmm(call.data.get("charge_start_time")),
+            "ce_time": _norm_hhmm(call.data.get("charge_end_time")),
+            "c_power": int(call.data.get("charge_power")),
+            "dcs_time": _norm_hhmm(call.data.get("discharge_start_time")),
+            "dce_time": _norm_hhmm(call.data.get("discharge_end_time")),
+            "dc_power": int(call.data.get("discharge_power")),
+            "charge_soc": int(call.data.get("charge_soc")),
+            "dis_charge_soc": int(call.data.get("discharge_soc")),
+        }
+
+        time_periods = [period_1]
+
+        # Period 2 (optional)
+        p2_fields = (
+            "charge2_start_time",
+            "charge2_end_time",
+            "discharge2_start_time",
+            "discharge2_end_time",
+            "charge2_power",
+            "discharge2_power",
+            "charge2_soc",
+            "discharge2_soc",
+        )
+
+        p2_any = any(call.data.get(k) is not None for k in p2_fields)
+        if p2_any:
+            missing = [k for k in p2_fields if call.data.get(k) is None]
+            if missing:
+                raise ValueError(f"Missing fields for period 2: {', '.join(missing)}")
+
+            period_2 = {
+                "cs_time": _norm_hhmm(call.data.get("charge2_start_time")),
+                "ce_time": _norm_hhmm(call.data.get("charge2_end_time")),
+                "c_power": int(call.data.get("charge2_power")),
+                "dcs_time": _norm_hhmm(call.data.get("discharge2_start_time")),
+                "dce_time": _norm_hhmm(call.data.get("discharge2_end_time")),
+                "dc_power": int(call.data.get("discharge2_power")),
+                "charge_soc": int(call.data.get("charge2_soc")),
+                "dis_charge_soc": int(call.data.get("discharge2_soc")),
+            }
+            time_periods.append(period_2)
+
+        ok = await api.set_time_of_use_schedule(
             station_id=str(station_id),
             reserve_soc=reserve_soc,
-            cs_time=cs_time,
-            ce_time=ce_time,
-            c_power=c_power,
-            dcs_time=dcs_time,
-            dce_time=dce_time,
-            dc_power=dc_power,
-            charge_soc=charge_soc,
-            dis_charge_soc=dis_charge_soc,
+            time_periods=time_periods,
         )
-    
-        if not success:
-            _LOGGER.error("Failed to set Time of Use (mode 8) schedule for station %s", station_id)
-    
-    # Register the custom mode schedule service
-    hass.services.async_register(
-        DOMAIN, 
-        "set_custom_mode_schedule", 
-        handle_set_custom_mode_schedule
-    )
 
+        if not ok:
+            raise ValueError("Failed to set TOU schedule (mode 8)")
+    # Make the service available in Home Assistant
+    hass.services.async_register(DOMAIN, "set_custom_mode_schedule", handle_set_custom_mode_schedule)
+
+    # Load platforms (sensor/number/select)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Register update listener for config entry changes
-    entry.async_on_unload(entry.add_update_listener(update_listener))
-
+    # Required by Home Assistant: async_setup_entry must return a boolean
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
+    if unload_ok and DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
-
-
-async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update."""
-    await hass.config_entries.async_reload(entry.entry_id) 

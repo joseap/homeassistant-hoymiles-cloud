@@ -407,6 +407,63 @@ class HoymilesAPI:
         _LOGGER.debug("Could not retrieve battery settings for station %s (likely no battery connected), using defaults", station_id)
         return {"data": {"mode": 1, "reserve_soc": 20}}
 
+    async def set_time_of_use_schedule(self, station_id: str, reserve_soc: int, time_periods: list[dict]) -> bool:
+        """Set Time of Use (mode 8) schedule in a single write using Hoymiles official JSON.
+
+        time_periods must be a list of dicts with keys:
+        cs_time, ce_time, c_power, dcs_time, dce_time, dc_power, charge_soc, dis_charge_soc
+        """
+        if not self._token:
+            await self.authenticate()
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": self._token,
+        }
+
+        mode_data = {
+            "mode": 8,
+            "data": {
+                "reserve_soc": int(reserve_soc),
+                "time": time_periods,
+            },
+        }
+
+        payload = {
+            "action": 1013,
+            "data": {
+                "sid": int(station_id),
+                "data": mode_data,
+            },
+        }
+
+        _LOGGER.debug("Setting TOU schedule (mode 8) with payload: %s", json.dumps(payload, indent=2))
+
+        try:
+            async with self._session.post(
+                API_BATTERY_SETTINGS_WRITE_URL, headers=headers, json=payload
+            ) as response:
+                resp_text = await response.text()
+                _LOGGER.debug("Set TOU schedule response: %s", resp_text)
+
+                try:
+                    resp = json.loads(resp_text)
+                except Exception:
+                    _LOGGER.error("Failed to parse TOU schedule response as JSON: %s", resp_text)
+                    return False
+
+                if resp.get("status") == "0" and resp.get("message") == "success":
+                    request_id = resp.get("data")
+                    _LOGGER.info("Successfully set TOU schedule (mode 8) (request ID: %s)", request_id)
+                    return True
+
+                _LOGGER.error("Failed to set TOU schedule: %s - %s", resp.get("status"), resp.get("message"))
+                return False
+        except Exception as e:
+            _LOGGER.error("Error setting TOU schedule: %s", e)
+            return False
+
     async def set_battery_mode(self, station_id: str, mode: int) -> bool:
         """Set battery mode for a station."""
         valid_modes = [1, 2, 3, 4, 7, 8]  # Self-Consumption, Economy, Backup, Off-Grid, Peak Shaving, Time of Use
@@ -514,86 +571,6 @@ class HoymilesAPI:
         except Exception as e:
             _LOGGER.error("Error setting battery mode: %s", e)
             raise
-
-
-    async def set_time_of_use_one_period(
-        self,
-        station_id: str,
-        reserve_soc: int,
-        cs_time: str,
-        ce_time: str,
-        c_power: int,
-        dcs_time: str,
-        dce_time: str,
-        dc_power: int,
-        charge_soc: int,
-        dis_charge_soc: int,
-    ) -> bool:
-        """Set Time of Use (mode 8) with a single period in ONE write.
-
-        This uses Hoymiles' official nested JSON structure:
-        action=1013, data.sid, data.data.mode=8, data.data.data.time=[...]
-        """
-        if not self._token:
-            await self.authenticate()
-
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": self._token,
-        }
-
-        payload = {
-            "action": 1013,
-            "data": {
-                "sid": int(station_id),
-                "data": {
-                    "mode": 8,
-                    "data": {
-                        "reserve_soc": int(reserve_soc),
-                        "time": [
-                            {
-                                "cs_time": cs_time,
-                                "ce_time": ce_time,
-                                "c_power": int(c_power),
-                                "dcs_time": dcs_time,
-                                "dce_time": dce_time,
-                                "dc_power": int(dc_power),
-                                "charge_soc": int(charge_soc),
-                                "dis_charge_soc": int(dis_charge_soc),
-                            }
-                        ],
-                    },
-                },
-            },
-        }
-
-        _LOGGER.debug(
-            "Setting Time of Use (mode 8) one-period schedule with payload: %s",
-            json.dumps(payload, indent=2),
-        )
-
-        try:
-            async with self._session.post(
-                API_BATTERY_SETTINGS_WRITE_URL, headers=headers, json=payload
-            ) as response:
-                resp_text = await response.text()
-                try:
-                    resp = json.loads(resp_text)
-                except json.JSONDecodeError:
-                    _LOGGER.error("Invalid JSON response: %s", resp_text)
-                    return False
-
-                # Hoymiles typically returns {"code": 0, ...} on success
-                if resp.get("code") == 0:
-                    _LOGGER.info("Successfully set Time of Use (mode 8) schedule for station %s", station_id)
-                    return True
-
-                _LOGGER.error("Failed to set Time of Use schedule: %s", resp_text)
-                return False
-        except Exception as err:
-            _LOGGER.error("Error setting Time of Use schedule: %s", err)
-            return False
 
     async def set_reserve_soc(self, station_id: str, reserve_soc: int) -> bool:
         """Set battery reserve SOC for a station."""

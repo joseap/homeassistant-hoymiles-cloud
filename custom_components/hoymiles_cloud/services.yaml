@@ -8,7 +8,7 @@ set_battery_mode:
   fields:
     mode:
       name: Mode
-      description: The battery operating mode to set.
+      description: The battery operating mode to set
       required: true
       example: "Self-Consumption Mode"
       selector:
@@ -42,59 +42,84 @@ set_reserve_soc:
           unit_of_measurement: "%"
 
 set_custom_mode_schedule:
-  name: Set Custom Mode Schedule
-  description: Configure the charge/discharge schedule (Time of Use mode).
+  name: Set TOU Schedule (Mode 8)
+  description: Configure the charge/discharge schedule for Time of Use mode (mode 8) in a single write. Supports 1 or 2 periods.
   target:
     entity:
       integration: hoymiles_cloud
       domain: select
   fields:
-    charge_start_time:
-      name: Charge Start Time
-      description: Time to start charging the battery.
-      required: true
-      example: "03:00"
+    station_id:
+      name: Station ID
+      description: "Station ID (sid). If omitted, it will be inferred from entity_id when possible."
+      required: false
+      example: 11659660
       selector:
-        time: {}
+        number:
+          min: 1
+          max: 999999999
+          step: 1
 
-    charge_end_time:
-      name: Charge End Time
-      description: Time to stop charging the battery.
-      required: true
-      example: "05:00"
-      selector:
-        time: {}
-
-    discharge_start_time:
-      name: Discharge Start Time
-      description: Time to start discharging the battery.
-      required: true
-      example: "18:00"
-      selector:
-        time: {}
-
-    discharge_end_time:
-      name: Discharge End Time
-      description: Time to stop discharging the battery.
-      required: true
-      example: "23:00"
-      selector:
-        time: {}
-
-    charge_power:
-      name: Charge Power
-      description: "Power for charging (0-100)."
-      required: true
-      example: 65
+    reserve_soc:
+      name: Reserve SOC
+      description: "Reserve state of charge (0-100)."
+      required: false
+      default: 10
+      example: 10
       selector:
         number:
           min: 0
           max: 100
           step: 1
+          unit_of_measurement: "%"
+
+    charge_start_time:
+      name: Charge Start Time
+      description: Time to start charging the battery
+      required: true
+      example: "14:00"
+      selector:
+        time: {}
+
+    charge_end_time:
+      name: Charge End Time
+      description: Time to stop charging the battery
+      required: true
+      example: "18:00"
+      selector:
+        time: {}
+
+    discharge_start_time:
+      name: Discharge Start Time
+      description: Time to start discharging the battery
+      required: true
+      example: "00:00"
+      selector:
+        time: {}
+
+    discharge_end_time:
+      name: Discharge End Time
+      description: Time to stop discharging the battery
+      required: true
+      example: "00:00"
+      selector:
+        time: {}
+
+    charge_power:
+      name: Charge Power
+      description: "Power percentage for charging (0-100)."
+      required: true
+      example: 60
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
 
     discharge_power:
       name: Discharge Power
-      description: "Power for discharging (0-100)."
+      description: "Power percentage for discharging (0-100)."
       required: true
       example: 0
       selector:
@@ -102,6 +127,7 @@ set_custom_mode_schedule:
           min: 0
           max: 100
           step: 1
+          unit_of_measurement: "%"
 
     charge_soc:
       name: Charge SOC Limit
@@ -127,12 +153,64 @@ set_custom_mode_schedule:
           step: 1
           unit_of_measurement: "%"
 
-    reserve_soc:
-      name: Reserve SOC
-      description: "Reserve state of charge (0-100)."
+    # Period 2 (optional)
+    charge2_start_time:
+      name: Charge 2 Start Time
       required: false
-      example: 10
-      default: 10
+      selector:
+        time: {}
+
+    charge2_end_time:
+      name: Charge 2 End Time
+      required: false
+      selector:
+        time: {}
+
+    discharge2_start_time:
+      name: Discharge 2 Start Time
+      required: false
+      selector:
+        time: {}
+
+    discharge2_end_time:
+      name: Discharge 2 End Time
+      required: false
+      selector:
+        time: {}
+
+    charge2_power:
+      name: Charge 2 Power
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    discharge2_power:
+      name: Discharge 2 Power
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    charge2_soc:
+      name: Charge 2 SOC Limit
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    discharge2_soc:
+      name: Discharge 2 SOC Limit
+      required: false
       selector:
         number:
           min: 0
