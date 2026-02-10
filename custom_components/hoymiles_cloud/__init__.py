@@ -278,115 +278,52 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register custom services
     async def handle_set_custom_mode_schedule(call):
-        """Handle the service call to set custom mode schedule."""
-        station_id = call.data.get("entity_id").split("_")[1]
-        
-        # Format the time values
-        charge_start = call.data.get("charge_start_time").replace(":", "")
-        charge_start = f"{charge_start[:2]}:{charge_start[2:]}"
-        
-        charge_end = call.data.get("charge_end_time").replace(":", "")
-        charge_end = f"{charge_end[:2]}:{charge_end[2:]}"
-        
-        discharge_start = call.data.get("discharge_start_time").replace(":", "")
-        discharge_start = f"{discharge_start[:2]}:{discharge_start[2:]}"
-        
-        discharge_end = call.data.get("discharge_end_time").replace(":", "")
-        discharge_end = f"{discharge_end[:2]}:{discharge_end[2:]}"
-        
-        # Get power and SOC values
-        charge_power = int(call.data.get("charge_power"))
-        discharge_power = int(call.data.get("discharge_power"))
+        """Handle the service call to set Time of Use (mode 8) schedule (one write)."""
+        # Prefer explicit station_id, otherwise parse from entity_id as in the existing code
+        station_id = call.data.get("station_id")
+        if not station_id:
+            entity_id = call.data.get("entity_id")
+            if not entity_id:
+                _LOGGER.error("Missing station_id or entity_id in service call data")
+                return
+            # Expected pattern: <domain>.<something>_<SID>_...
+            try:
+                station_id = entity_id.split("_")[1]
+            except Exception:
+                _LOGGER.error("Unable to parse station_id from entity_id: %s", entity_id)
+                return
+    
+        def _norm_time(value: str) -> str:
+            # Accept 'HH:MM' and normalize to 'HH:MM'
+            v = str(value).replace(":", "")
+            return f"{v[:2]}:{v[2:]}"
+    
+        cs_time = _norm_time(call.data.get("charge_start_time"))
+        ce_time = _norm_time(call.data.get("charge_end_time"))
+        dcs_time = _norm_time(call.data.get("discharge_start_time"))
+        dce_time = _norm_time(call.data.get("discharge_end_time"))
+    
+        c_power = int(call.data.get("charge_power"))
+        dc_power = int(call.data.get("discharge_power"))
         charge_soc = int(call.data.get("charge_soc"))
-        discharge_soc = int(call.data.get("discharge_soc"))
-        
-        # Get current settings
-        current_settings = await api.get_battery_settings(station_id)
-        if not current_settings or "mode_data" not in current_settings:
-            _LOGGER.error("Failed to get current battery settings")
-            return
-            
-        # Get the k_8 data
-        mode_data = current_settings.get("mode_data", {})
-        k8_data = mode_data.get("k_8", {})
-        
-        # Ensure we have the time array
-        if "time" not in k8_data or not k8_data["time"]:
-            k8_data["time"] = [{}]
-        
-        # Update the settings
-        k8_data["time"][0] = {
-            "cs_time": charge_start,
-            "ce_time": charge_end,
-            "dcs_time": discharge_start,
-            "dce_time": discharge_end,
-            "c_power": charge_power,
-            "dc_power": discharge_power,
-            "charge_soc": charge_soc,
-            "dis_charge_soc": discharge_soc
-        }
-        
-        # Update with the full k_8 data
-        mode_data["k_8"] = k8_data
-        
-        # Switch to custom mode and update settings
-        success = await api.set_battery_mode(station_id, BATTERY_MODE_CUSTOM)
+        dis_charge_soc = int(call.data.get("discharge_soc"))
+        reserve_soc = int(call.data.get("reserve_soc", 10))
+    
+        success = await api.set_time_of_use_one_period(
+            station_id=str(station_id),
+            reserve_soc=reserve_soc,
+            cs_time=cs_time,
+            ce_time=ce_time,
+            c_power=c_power,
+            dcs_time=dcs_time,
+            dce_time=dce_time,
+            dc_power=dc_power,
+            charge_soc=charge_soc,
+            dis_charge_soc=dis_charge_soc,
+        )
+    
         if not success:
-            _LOGGER.error("Failed to set battery mode to Custom Mode")
-            return
-            
-        # Now update the custom mode settings
-        # Prepare mode data with nested structure
-        mode_data_payload = {
-            "mode": BATTERY_MODE_CUSTOM,
-            "data": {
-                "time": k8_data["time"]
-            }
-        }
-        
-        # Add reserve_soc if present
-        if "reserve_soc" in k8_data:
-            mode_data_payload["data"]["reserve_soc"] = k8_data["reserve_soc"]
-            
-        # Call the API to update
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": api._token,
-        }
-        
-        data = {
-            "action": 1013,
-            "data": {
-                "sid": int(station_id),
-                "data": mode_data_payload
-            },
-        }
-        
-        try:
-            async with api._session.post(
-                API_BATTERY_SETTINGS_WRITE_URL, headers=headers, json=data
-            ) as response:
-                resp_text = await response.text()
-                
-                try:
-                    resp = json.loads(resp_text)
-                    
-                    if resp.get("status") == "0" and resp.get("message") == "success":
-                        _LOGGER.info("Successfully updated Custom Mode schedule")
-                        # Update coordinator to refresh the data
-                        await coordinator.async_request_refresh()
-                    else:
-                        _LOGGER.error(
-                            "Failed to update Custom Mode: %s - %s", 
-                            resp.get("status"), 
-                            resp.get("message")
-                        )
-                except json.JSONDecodeError as e:
-                    _LOGGER.error("Error decoding Custom Mode response: %s", e)
-                    
-        except Exception as e:
-            _LOGGER.error("Error updating Custom Mode settings: %s", e)
+            _LOGGER.error("Failed to set Time of Use (mode 8) schedule for station %s", station_id)
     
     # Register the custom mode schedule service
     hass.services.async_register(
