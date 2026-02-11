@@ -488,9 +488,10 @@ class HoymilesAPI:
         
         # Add mode-specific settings
         if mode == 1:  # Self-Consumption Mode
-            # Default SOC for Self Consumption is 10%
-            mode_data["data"]["reserve_soc"] = int(reserve_soc) if reserve_soc is not None else 10
-            _LOGGER.debug("Setting Self-Consumption Mode with reserve_soc: %s", mode_data["data"]["reserve_soc"])
+            # reserve_soc is user-selectable; fallback to 10% if omitted
+            soc = 10 if reserve_soc is None else int(reserve_soc)
+            mode_data["data"]["reserve_soc"] = soc
+            _LOGGER.debug("Setting Self-Consumption Mode with reserve_soc: %s", soc)
             
         elif mode == 2:  # Economy Mode
             # Economy mode needs minimum reserve_soc
@@ -500,9 +501,10 @@ class HoymilesAPI:
             _LOGGER.debug("Setting Economy Mode with default settings")
             
         elif mode == 3:  # Backup Mode
-            # Backup mode typically uses a high reserve SOC (100%)
-            mode_data["data"]["reserve_soc"] = int(reserve_soc) if reserve_soc is not None else 100
-            _LOGGER.debug("Setting Backup Mode with reserve_soc: %s", mode_data["data"]["reserve_soc"])
+            # reserve_soc is user-selectable; fallback to 100% if omitted
+            soc = 100 if reserve_soc is None else int(reserve_soc)
+            mode_data["data"]["reserve_soc"] = soc
+            _LOGGER.debug("Setting Backup Mode with reserve_soc: %s", soc)
             
         elif mode == 4:  # Off-Grid Mode
             # Off-Grid mode settings
