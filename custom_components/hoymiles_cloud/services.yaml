@@ -217,3 +217,30 @@ set_custom_mode_schedule:
           max: 100
           step: 1
           unit_of_measurement: "%"
+
+
+set_self_consumption_mode:
+  name: Set Self-Consumption Mode (Mode 1) with Reserve SOC
+  description: Switch the battery to Self-Consumption mode (mode 1) and apply reserve_soc in a single write (action 1013).
+  fields:
+    station_id:
+      name: Station ID
+      description: "Station ID (sid). If omitted, it will be inferred from entity_id when possible."
+      required: false
+      example: 11659660
+      selector:
+        number:
+          min: 1
+          max: 999999999
+          step: 1
+    reserve_soc:
+      name: Reserve SOC
+      description: "Reserve state of charge (0-100)."
+      required: true
+      example: 10
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"

@@ -360,6 +360,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Make the service available in Home Assistant
     hass.services.async_register(DOMAIN, "set_custom_mode_schedule", handle_set_custom_mode_schedule)
 
+    async def handle_set_self_consumption_mode(call):
+        """Handle the service call to set Self-Consumption mode (mode 1) with reserve SOC in one write."""
+
+        # Prefer explicit station_id; otherwise try to infer from entity_id
+        station_id = call.data.get("station_id")
+        if station_id is None:
+            entity_id = call.data.get("entity_id", "")
+            m = re.search(r"(\d+)", entity_id)
+            station_id = m.group(1) if m else None
+
+        if station_id is None:
+            raise ValueError("station_id is required (could not infer from entity_id)")
+
+        reserve_soc = int(call.data.get("reserve_soc", 10))
+
+        ok = await api.set_battery_mode(str(station_id), 1, reserve_soc=reserve_soc)
+        if not ok:
+            raise ValueError("Failed to set Self-Consumption mode (mode 1)")
+
+    hass.services.async_register(DOMAIN, "set_self_consumption_mode", handle_set_self_consumption_mode)
+
+
     # Load platforms (sensor/number/select)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

@@ -464,7 +464,7 @@ class HoymilesAPI:
             _LOGGER.error("Error setting TOU schedule: %s", e)
             return False
 
-    async def set_battery_mode(self, station_id: str, mode: int) -> bool:
+    async def set_battery_mode(self, station_id: str, mode: int, reserve_soc: Optional[int] = None) -> bool:
         """Set battery mode for a station."""
         valid_modes = [1, 2, 3, 4, 7, 8]  # Self-Consumption, Economy, Backup, Off-Grid, Peak Shaving, Time of Use
         if mode not in valid_modes:
@@ -489,8 +489,8 @@ class HoymilesAPI:
         # Add mode-specific settings
         if mode == 1:  # Self-Consumption Mode
             # Default SOC for Self Consumption is 10%
-            mode_data["data"]["reserve_soc"] = 10
-            _LOGGER.debug("Setting Self-Consumption Mode with reserve_soc: 10")
+            mode_data["data"]["reserve_soc"] = int(reserve_soc) if reserve_soc is not None else 10
+            _LOGGER.debug("Setting Self-Consumption Mode with reserve_soc: %s", mode_data["data"]["reserve_soc"])
             
         elif mode == 2:  # Economy Mode
             # Economy mode needs minimum reserve_soc
@@ -501,8 +501,8 @@ class HoymilesAPI:
             
         elif mode == 3:  # Backup Mode
             # Backup mode typically uses a high reserve SOC (100%)
-            mode_data["data"]["reserve_soc"] = 100
-            _LOGGER.debug("Setting Backup Mode with reserve_soc: 100")
+            mode_data["data"]["reserve_soc"] = int(reserve_soc) if reserve_soc is not None else 100
+            _LOGGER.debug("Setting Backup Mode with reserve_soc: %s", mode_data["data"]["reserve_soc"])
             
         elif mode == 4:  # Off-Grid Mode
             # Off-Grid mode settings
