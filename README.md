@@ -88,3 +88,253 @@ For bugs or feature requests, please [open an issue on GitHub](https://github.co
 ## Disclaimer
 
 This integration is not affiliated with, endorsed by, or connected to Hoymiles Power Electronics Inc. This is a third-party integration developed for personal use. 
+
+## Dashboard Batería
+
+Sección del dashboard `lovelace` para controlar los modos de batería:
+
+```yaml
+# Sección "Batería" - views[4] del dashboard lovelace
+type: sections
+title: Bateria
+path: Bateria
+sections:
+  # Backup (SOC 10%)
+  - type: grid
+    cards:
+      - type: heading
+        heading: New section
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: Hoymiles - Backup
+            subtitle: Reserva SOC + activar modo
+          - type: custom:mushroom-number-card
+            entity: input_number.hoymiles_backup_reserve_soc
+            name: Reserve SOC (Backup)
+            icon: mdi:battery-lock
+          - type: custom:mushroom-template-card
+            primary: Activar Backup
+            secondary: Aplica SOC y cambia a Backup
+            icon: mdi:battery-check
+            tap_action:
+              action: call-service
+              service: script.hoymiles_backup_aplicar_y_activar
+          - type: custom:mushroom-title-card
+            title: " "
+            subtitle: " "
+          - type: custom:mushroom-title-card
+            title: Hoymiles - Autoconsumo
+            subtitle: Reserva SOC + activar modo
+          - type: custom:mushroom-number-card
+            entity: input_number.hoymiles_self_consumption_reserve_soc
+            name: Reserve SOC (Autoconsumo)
+            icon: mdi:home-lightning-bolt
+          - type: custom:mushroom-template-card
+            primary: Activar Autoconsumo
+            secondary: Aplica SOC y cambia a Autoconsumo
+            icon: mdi:home-lightning-bolt
+            tap_action:
+              action: call-service
+              service: script.hoymiles_autoconsumo_aplicar_y_activar
+
+  # TOU 2 periodos
+  - type: grid
+    cards:
+      - type: heading
+        heading: New section
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: Hoymiles - TOU (Modo 8)
+            subtitle: 2 periodos (una llamada)
+          - type: custom:mushroom-title-card
+            title: Parámetro global
+            subtitle: SOC reservado
+          - type: custom:mushroom-number-card
+            entity: input_number.tou_reserve_soc
+            name: Reserve SOC (%)
+            icon: mdi:battery-lock
+          - type: custom:mushroom-title-card
+            title: Periodo 1
+            subtitle: Carga / Descarga + Potencias/SOC
+          - type: entities
+            entities:
+              - entity: input_datetime.tou_charge_start
+                name: Carga inicio
+              - entity: input_datetime.tou_charge_end
+                name: Carga fin
+              - entity: input_number.tou_charge_power
+                name: Potencia carga (%)
+              - entity: input_number.tou_charge_soc
+                name: SOC carga (%)
+              - entity: input_datetime.tou_discharge_start
+                name: Descarga inicio
+              - entity: input_datetime.tou_discharge_end
+                name: Descarga fin
+              - entity: input_number.tou_discharge_power
+                name: Potencia descarga (%)
+              - entity: input_number.tou_discharge_soc
+                name: SOC descarga (%)
+          - type: custom:mushroom-title-card
+            title: Periodo 2
+            subtitle: Carga2 / Descarga2 + Potencias/SOC
+          - type: entities
+            entities:
+              - entity: input_datetime.tou_charge2_start
+                name: Carga2 inicio
+              - entity: input_datetime.tou_charge2_end
+                name: Carga2 fin
+              - entity: input_number.tou_charge2_power
+                name: Potencia carga2 (%)
+              - entity: input_number.tou_charge2_soc
+                name: SOC carga2 (%)
+              - entity: input_datetime.tou_discharge2_start
+                name: Descarga2 inicio
+              - entity: input_datetime.tou_discharge2_end
+                name: Descarga2 fin
+              - entity: input_number.tou_discharge2_power
+                name: Potencia descarga2 (%)
+              - entity: input_number.tou_discharge2_soc
+                name: SOC descarga2 (%)
+          - type: custom:mushroom-template-card
+            primary: Aplicar TOU (2 periodos)
+            secondary: Envía el JSON completo a Hoymiles
+            icon: mdi:battery-clock
+            tap_action:
+              action: call-service
+              service: script.hoymiles_aplicar_tou_2_periodos
+
+  # TOU visual
+  - type: grid
+    cards:
+      - type: heading
+        heading: New section
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: Hoymiles – TOU (Modo 8)
+            subtitle: Configura horarios, potencia y SOC
+          - type: custom:mushroom-title-card
+            title: Carga
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.tou_charge_start
+                name: Inicio
+                icon: mdi:clock-start
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.tou_charge_end
+                name: Fin
+                icon: mdi:clock-end
+              - type: custom:mushroom-entity-card
+                entity: input_number.tou_charge_power
+                name: Potencia (%)
+                icon: mdi:flash
+              - type: custom:mushroom-entity-card
+                entity: input_number.tou_charge_soc
+                name: Detener SOC (%)
+                icon: mdi:battery-80
+          - type: custom:mushroom-title-card
+            title: Descarga
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.tou_discharge_start
+                name: Inicio
+                icon: mdi:clock-start
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.tou_discharge_end
+                name: Fin
+                icon: mdi:clock-end
+              - type: custom:mushroom-entity-card
+                entity: input_number.tou_discharge_power
+                name: Potencia (%)
+                icon: mdi:flash-outline
+              - type: custom:mushroom-entity-card
+                entity: input_number.tou_discharge_soc
+                name: Detener SOC (%)
+                icon: mdi:battery-30
+          - type: custom:mushroom-entity-card
+            entity: input_number.tou_reserve_soc
+            name: SOC reserva (%)
+            icon: mdi:shield-battery
+          - type: custom:mushroom-template-card
+            primary: Aplicar TOU
+            secondary: Aplica el modo TOU (modo 8) y el horario configurado
+            icon: mdi:battery-clock
+            tap_action:
+              action: call-service
+              service: script.aplicar_tou_hoymiles
+            color: blue
+
+  # Respaldo (SOC 95%)
+  - type: grid
+    cards:
+      - type: heading
+        heading: New section
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: Hoymiles - Respaldo
+            subtitle: Reserva SOC + activar modo
+          - type: custom:mushroom-number-card
+            entity: input_number.hoymiles_respaldo_reserve_soc
+            name: Reserve SOC (Respaldo)
+            icon: mdi:battery-lock
+          - type: custom:mushroom-template-card
+            primary: Activar Respaldo
+            secondary: Aplica SOC y cambia a Respaldo
+            icon: mdi:battery-check
+            tap_action:
+              action: call-service
+              service: script.hoymiles_respaldo_aplicar_y_activar
+```
+
+## Scripts
+
+### Hoymiles - Backup
+```yaml
+alias: Hoymiles - Backup - aplicar SOC y activar
+mode: single
+sequence:
+  - data:
+      station_id: 11659660
+      reserve_soc: "{{ states('input_number.hoymiles_backup_reserve_soc') | int }}"
+    action: hoymiles_cloud.set_backup_mode
+```
+
+### Hoymiles - Autoconsumo
+```yaml
+alias: Hoymiles - Autoconsumo - aplicar SOC y activar
+mode: single
+sequence:
+  - data:
+      station_id: 11659660
+      reserve_soc: "{{ states('input_number.hoymiles_self_consumption_reserve_soc') | int }}"
+    action: hoymiles_cloud.set_self_consumption_mode
+```
+
+### Hoymiles - Respaldo
+```yaml
+alias: Hoymiles - Respaldo - aplicar SOC y activar
+mode: single
+sequence:
+  - data:
+      station_id: 11659660
+      reserve_soc: "{{ states('input_number.hoymiles_respaldo_reserve_soc') | int }}"
+    action: hoymiles_cloud.set_backup_mode
+```
+
+## Helpers
+
+| Entity | Type | Min | Max | Default | Unit |
+|--------|------|-----|-----|---------|------|
+| `input_number.hoymiles_backup_reserve_soc` | input_number | 10 | 100 | 10 | % |
+| `input_number.hoymiles_self_consumption_reserve_soc` | input_number | 10 | 100 | 10 | % |
+| `input_number.hoymiles_respaldo_reserve_soc` | input_number | 10 | 100 | 95 | % |
+| `input_number.tou_reserve_soc` | input_number | 0 | 100 | 10 | % |
