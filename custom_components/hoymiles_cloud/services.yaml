@@ -1,0 +1,320 @@
+set_battery_mode:
+  name: Set Battery Mode
+  description: Set the operating mode of the Hoymiles battery.
+  target:
+    entity:
+      integration: hoymiles_cloud
+      domain: select
+  fields:
+    mode:
+      name: Mode
+      description: The battery operating mode to set
+      required: true
+      example: "Self-Consumption Mode"
+      selector:
+        select:
+          options:
+            - "Self-Consumption Mode"
+            - "Economy Mode"
+            - "Backup Mode"
+            - "Off-Grid Mode"
+            - "Peak Shaving Mode"
+            - "Time of Use Mode"
+
+set_reserve_soc:
+  name: Set Reserve SOC
+  description: Set the minimum reserve state of charge for the Hoymiles battery.
+  target:
+    entity:
+      integration: hoymiles_cloud
+      domain: number
+  fields:
+    value:
+      name: Reserve SOC
+      description: "The minimum state of charge to maintain in the battery (0-100%)."
+      required: true
+      example: 20
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+set_custom_mode_schedule:
+  name: Set TOU Schedule (Mode 8)
+  description: Configure the charge/discharge schedule for Time of Use mode (mode 8) in a single write. Supports 1 or 2 periods.
+  target:
+    entity:
+      integration: hoymiles_cloud
+      domain: select
+  fields:
+    station_id:
+      name: Station ID
+      description: "Station ID (sid). If omitted, it will be inferred from entity_id when possible."
+      required: false
+      example: 11659660
+      selector:
+        number:
+          min: 1
+          max: 999999999
+          step: 1
+
+    reserve_soc:
+      name: Reserve SOC
+      description: "Reserve state of charge (0-100)."
+      required: false
+      default: 10
+      example: 10
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    charge_start_time:
+      name: Charge Start Time
+      description: Time to start charging the battery
+      required: true
+      example: "14:00"
+      selector:
+        time: {}
+
+    charge_end_time:
+      name: Charge End Time
+      description: Time to stop charging the battery
+      required: true
+      example: "18:00"
+      selector:
+        time: {}
+
+    discharge_start_time:
+      name: Discharge Start Time
+      description: Time to start discharging the battery
+      required: true
+      example: "00:00"
+      selector:
+        time: {}
+
+    discharge_end_time:
+      name: Discharge End Time
+      description: Time to stop discharging the battery
+      required: true
+      example: "00:00"
+      selector:
+        time: {}
+
+    charge_power:
+      name: Charge Power
+      description: "Power percentage for charging (0-100)."
+      required: true
+      example: 60
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    discharge_power:
+      name: Discharge Power
+      description: "Power percentage for discharging (0-100)."
+      required: true
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    charge_soc:
+      name: Charge SOC Limit
+      description: "Maximum state of charge when charging (0-100)."
+      required: true
+      example: 95
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    discharge_soc:
+      name: Discharge SOC Limit
+      description: "Minimum state of charge when discharging (0-100)."
+      required: true
+      example: 10
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    # Period 2 (optional)
+    charge2_start_time:
+      name: Charge 2 Start Time
+      required: false
+      selector:
+        time: {}
+
+    charge2_end_time:
+      name: Charge 2 End Time
+      required: false
+      selector:
+        time: {}
+
+    discharge2_start_time:
+      name: Discharge 2 Start Time
+      required: false
+      selector:
+        time: {}
+
+    discharge2_end_time:
+      name: Discharge 2 End Time
+      required: false
+      selector:
+        time: {}
+
+    charge2_power:
+      name: Charge 2 Power
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    discharge2_power:
+      name: Discharge 2 Power
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    charge2_soc:
+      name: Charge 2 SOC Limit
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+    discharge2_soc:
+      name: Discharge 2 SOC Limit
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+set_self_consumption_mode:
+  name: Set Self-Consumption Mode (Mode 1)
+  description: Set Self-Consumption mode (mode 1) and apply reserve_soc in a single write (action 1013).
+  target:
+    entity:
+      integration: hoymiles_cloud
+      domain: select
+  fields:
+    station_id:
+      name: Station ID
+      description: "Station ID (sid). If omitted, it will be inferred from entity_id when possible."
+      required: false
+      example: 11659660
+      selector:
+        number:
+          min: 1
+          max: 999999999
+          step: 1
+    reserve_soc:
+      name: Reserve SOC
+      description: "Reserve state of charge (0-100)."
+      required: true
+      example: 10
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+set_backup_mode:
+  name: Set Backup Mode (Mode 3)
+  description: Set Backup mode (mode 3) and apply reserve_soc in a single write (action 1013).
+  target:
+    entity:
+      integration: hoymiles_cloud
+      domain: select
+  fields:
+    station_id:
+      name: Station ID
+      description: "Station ID (sid). If omitted, it will be inferred from entity_id when possible."
+      required: false
+      example: 11659660
+      selector:
+        number:
+          min: 1
+          max: 999999999
+          step: 1
+    reserve_soc:
+      name: Reserve SOC
+      description: "Reserve state of charge (0-100)."
+      required: true
+      example: 95
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+set_forced_charge_mode:
+  name: Set Forced Charge Mode (Mode 5)
+  description: Set Forced Charge mode (mode 5) to charge battery from grid with reserve_soc and max_power parameters.
+  target:
+    entity:
+      integration: hoymiles_cloud
+      domain: select
+  fields:
+    station_id:
+      name: Station ID
+      description: "Station ID (sid). If omitted, it will be inferred from entity_id when possible."
+      required: false
+      example: 11659660
+      selector:
+        number:
+          min: 1
+          max: 999999999
+          step: 1
+    reserve_soc:
+      name: Reserve SOC
+      description: "Target state of charge for forced charging (10-100)."
+      required: true
+      example: 95
+      selector:
+        number:
+          min: 10
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+    max_power:
+      name: Max Power
+      description: "Maximum charge power in watts."
+      required: true
+      example: 60
+      selector:
+        number:
+          min: 50
+          max: 5000
+          step: 50
+          unit_of_measurement: "W"

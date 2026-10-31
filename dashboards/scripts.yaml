@@ -1,0 +1,28 @@
+hoymiles_forced_charge_apply:
+  alias: Hoymiles - Carga forzada - aplicar
+  description: Aplica carga forzada mode 5 con los valores de los input_number
+  mode: single
+  sequence:
+    - action: hoymiles_cloud.set_forced_charge_mode
+      data:
+        station_id: 11659660
+        reserve_soc: "{{ states('input_number.hoymiles_forced_charge_reserve_soc') | int }}"
+        max_power: "{{ states('input_number.hoymiles_forced_charge_max_power') | int }}"
+
+hoymiles_backup_aplicar_y_activar:
+  alias: Hoymiles - Backup - aplicar SOC y activar
+  mode: single
+  sequence:
+    - action: hoymiles_cloud.set_backup_mode
+      data:
+        station_id: 11659660
+        reserve_soc: "{{ states('input_number.hoymiles_backup_reserve_soc') | int }}"
+
+hoymiles_autoconsumo_aplicar_y_activar:
+  alias: Hoymiles - Autoconsumo - aplicar SOC y activar
+  mode: single
+  sequence:
+    - action: hoymiles_cloud.set_self_consumption_mode
+      data:
+        station_id: 11659660
+        reserve_soc: "{{ states('input_number.hoymiles_self_consumption_reserve_soc') | int }}"

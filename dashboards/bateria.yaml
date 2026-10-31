@@ -1,0 +1,206 @@
+title: Bateria
+path: Bateria
+type: sections
+sections:
+  - type: grid
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: Hoymiles - Carga Forzada
+            subtitle: Cargar batería desde red (modo 5)
+          - type: custom:mushroom-number-card
+            entity: input_number.hoymiles_forced_charge_reserve_soc
+            name: Reserve SOC (%)
+            icon: mdi:battery-charging-high
+            display_mode: slider
+            min: 10
+            max: 100
+            step: 5
+            icon_color: green
+            buttons: true
+          - type: custom:mushroom-number-card
+            entity: input_number.hoymiles_forced_charge_max_power
+            name: Potencia de carga (%)
+            icon: mdi:flash
+            display_mode: slider
+            min: 0
+            max: 100
+            step: 5
+            icon_color: yellow
+            buttons: true
+          - type: custom:mushroom-template-card
+            primary: Aplicar Carga Forzada
+            secondary: Mode 5
+            icon: mdi:play-circle
+            icon_color: green
+            tap_action:
+              action: call-service
+              service: script.hoymiles_forced_charge_apply
+  - type: grid
+    cards:
+      - type: heading
+        heading: New section
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: "Hoymiles – TOU (Modo 8)"
+            subtitle: Configura horarios, potencia y SOC
+          - type: custom:mushroom-title-card
+            title: Carga
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.tou_charge_start
+                name: Inicio
+                icon: mdi:clock-start
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.tou_charge_end
+                name: Fin
+                icon: mdi:clock-end
+              - type: custom:mushroom-entity-card
+                entity: input_number.tou_charge_power
+                name: Potencia (%)
+                icon: mdi:flash
+              - type: custom:mushroom-entity-card
+                entity: input_number.tou_charge_soc
+                name: Detener SOC (%)
+                icon: mdi:battery-80
+          - type: custom:mushroom-title-card
+            title: Descarga
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.tou_discharge_start
+                name: Inicio
+                icon: mdi:clock-start
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.tou_discharge_end
+                name: Fin
+                icon: mdi:clock-end
+              - type: custom:mushroom-entity-card
+                entity: input_number.tou_discharge_power
+                name: Potencia (%)
+                icon: mdi:flash-outline
+              - type: custom:mushroom-entity-card
+                entity: input_number.tou_discharge_soc
+                name: Detener SOC (%)
+                icon: mdi:battery-30
+          - type: custom:mushroom-entity-card
+            entity: input_number.tou_reserve_soc
+            name: SOC reserva (%)
+            icon: mdi:shield-battery
+          - type: custom:mushroom-template-card
+            primary: Aplicar TOU
+            secondary: Aplica el modo TOU (modo 8) y el horario configurado
+            icon: mdi:battery-clock
+            tap_action:
+              action: call-service
+              service: script.aplicar_tou_hoymiles
+            color: blue
+  - type: grid
+    cards:
+      - type: heading
+        heading: New section
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: "Hoymiles - TOU (Modo 8)"
+            subtitle: 2 periodos (una llamada)
+          - type: custom:mushroom-title-card
+            title: Parámetro global
+            subtitle: SOC reservado
+          - type: custom:mushroom-number-card
+            entity: input_number.tou_reserve_soc
+            name: Reserve SOC (%)
+            icon: mdi:battery-lock
+          - type: custom:mushroom-title-card
+            title: Periodo 1
+            subtitle: Carga / Descarga + Potencias/SOC
+          - type: entities
+            entities:
+              - entity: input_datetime.tou_charge_start
+                name: Carga inicio
+              - entity: input_datetime.tou_charge_end
+                name: Carga fin
+              - entity: input_number.tou_charge_power
+                name: Potencia carga (%)
+              - entity: input_number.tou_charge_soc
+                name: SOC carga (%)
+              - entity: input_datetime.tou_discharge_start
+                name: Descarga inicio
+              - entity: input_datetime.tou_discharge_end
+                name: Descarga fin
+              - entity: input_number.tou_discharge_power
+                name: Potencia descarga (%)
+              - entity: input_number.tou_discharge_soc
+                name: SOC descarga (%)
+          - type: custom:mushroom-title-card
+            title: Periodo 2
+            subtitle: Carga2 / Descarga2 + Potencias/SOC
+          - type: entities
+            entities:
+              - entity: input_datetime.tou_charge2_start
+                name: Carga2 inicio
+              - entity: input_datetime.tou_charge2_end
+                name: Carga2 fin
+              - entity: input_number.tou_charge2_power
+                name: Potencia carga2 (%)
+              - entity: input_number.tou_charge2_soc
+                name: SOC carga2 (%)
+              - entity: input_datetime.tou_discharge2_start
+                name: Descarga2 inicio
+              - entity: input_datetime.tou_discharge2_end
+                name: Descarga2 fin
+              - entity: input_number.tou_discharge2_power
+                name: Potencia descarga2 (%)
+              - entity: input_number.tou_discharge2_soc
+                name: SOC descarga2 (%)
+          - type: custom:mushroom-template-card
+            primary: Aplicar TOU (2 periodos)
+            secondary: Envía el JSON completo a Hoymiles
+            icon: mdi:battery-clock
+            tap_action:
+              action: call-service
+              service: script.hoymiles_aplicar_tou_2_periodos
+  - type: grid
+    cards:
+      - type: heading
+        heading: New section
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: Hoymiles - Backup
+            subtitle: Reserva SOC + activar modo
+          - type: custom:mushroom-number-card
+            entity: input_number.hoymiles_backup_reserve_soc
+            name: Reserve SOC (Backup)
+            icon: mdi:battery-lock
+          - type: custom:mushroom-template-card
+            primary: Activar Backup
+            secondary: Aplica SOC y cambia a Backup
+            icon: mdi:battery-check
+            tap_action:
+              action: call-service
+              service: script.hoymiles_backup_aplicar_y_activar
+          - type: custom:mushroom-title-card
+            title: " "
+            subtitle: " "
+          - type: custom:mushroom-title-card
+            title: Hoymiles - Autoconsumo
+            subtitle: Reserva SOC + activar modo
+          - type: custom:mushroom-number-card
+            entity: input_number.hoymiles_self_consumption_reserve_soc
+            name: Reserve SOC (Autoconsumo)
+            icon: mdi:home-lightning-bolt
+          - type: custom:mushroom-template-card
+            primary: Activar Autoconsumo
+            secondary: Aplica SOC y cambia a Autoconsumo
+            icon: mdi:home-lightning-bolt
+            tap_action:
+              action: call-service
+              service: script.hoymiles_autoconsumo_aplicar_y_activar
