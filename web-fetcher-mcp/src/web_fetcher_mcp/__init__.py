@@ -1,0 +1,1 @@
+"""Web Fetcher MCP Server."""
